@@ -452,6 +452,22 @@
             text-transform: uppercase;
             white-space: nowrap;
         }
+        .participant-reroll-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            margin-left: 8px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            color: #fee2e2;
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(239, 68, 68, 0.55);
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
         .participant-row label {
             display: inline-flex;
             align-items: center;
@@ -1225,8 +1241,8 @@
             </div>
         </div>
         <div class="panel panel-with-bg">
-            <h3 style="margin:0 0 15px 0; color: var(--accent-neon-blue); text-shadow: none;">ТОП (ВЫВОДЫ)</h3>
-            <div id="leaderboard" style="overflow-y:auto; flex-grow: 1;"></div>
+            <h3 style="margin:0 0 15px 0; color: var(--accent-neon-blue); text-shadow: none;">ПОСЛЕДНИЕ 10 ВЫИГРЫВАВШИХ</h3>
+            <div id=\"leaderboard\" style=\"overflow-y:auto; flex-grow: 1; max-height: 350px;\"></div>
             <div onclick="openAdminLogin()" style="position:absolute; bottom:2px; left:50%; transform:translateX(-50%); width:160px; height:22px; cursor:default; z-index:10000; background:transparent; border:none; outline:none;"></div>
         </div>
     </div>
@@ -2450,13 +2466,17 @@
                 // Yellow label with count
                 const winnerLabel = isWinner ? `<span class="participant-win-tag">ВЫИГРЫВАЛ ${winCount}</span>` : '';
                 
+                // Check if participant was rerolled
+                const wasRerolled = globalHistory.some(h => h.name.toLowerCase() === u.toLowerCase() && h.isReroll);
+                const rerollLabel = wasRerolled ? `<span class="participant-reroll-tag">РЕРОЛЬНУТ</span>` : '';
+                
                 // Determine if inactive based on filter
                 const isInactive = neverWonOnly && isWinner;
                 
-                html += `<div class="participant-row${isInactive ? ' is-inactive' : ''}"><span class="participant-name"><span class="participant-badge">УЧАСТВУЕТ</span><span class="participant-name-text">${i + 1}. <b>${u}</b>${winnerLabel}</span></span><label><input type="checkbox" ${isInactive ? 'disabled' : 'checked'} onchange="toggleParticipantActive('${u.replace(/'/g, "\\'")}', this.checked)"></label></div>`;
+                html += `<div class="participant-row${isInactive ? ' is-inactive' : ''}"><span class="participant-name"><span class="participant-badge">УЧАСТВУЕТ</span><span class="participant-name-text">${i + 1}. <b>${u}</b>${winnerLabel}${rerollLabel}</span></span><label><input type="checkbox" ${isInactive ? 'disabled' : 'checked'} onchange="toggleParticipantActive('${u.replace(/'/g, "\\'")}', this.checked)"></label></div>`;
             });
             container.innerHTML = html || '<div style="color:#666; text-align:center; padding:30px 0;">Нет участников</div>';
-        }
+        };
         let leaderEditIndex = -1;
         function openLeaderEdit(index) {
             if (index < 0 || index >= leaders.length) return;
