@@ -253,6 +253,62 @@
             box-shadow: none;
             color: var(--soft-light);
         }
+        .numbers-panel {
+            display: none;
+            margin-bottom: 12px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--accent-neon-blue);
+            gap: 10px;
+            flex-direction: column;
+        }
+        .numbers-panel.is-open {
+            display: flex;
+        }
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .numbers-panel label {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--accent-neon-blue);
+            text-transform: uppercase;
+        }
+        .numbers-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .numbers-status {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.8);
+            border: 1px solid rgba(255, 20, 147, 0.25);
+            font-size: 12px;
+            line-height: 1.45;
+            color: #fbcfe8;
+        }
+        .numbers-chat-box {
+            height: 240px;
+            overflow: hidden;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 20, 147, 0.25);
+            background: var(--dark-purple);
+        }
+        #numbers-chat-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+            background: var(--dark-purple);
+        }
         .btn-purple {
             border-color: var(--accent-neon-blue);
             color: var(--accent-neon-blue);
@@ -1174,6 +1230,31 @@
             <button class="btn-main btn-codeword" onclick="changeCodeword()">КОД: <span id="codeword-display">+</span></button>
             <button class="btn-main btn-purple" onclick="openWheel()">РУЛЕТКА</button>
             <button class="btn-main btn-purple" onclick="instantRoll()">БЫСТРЫЙ РОЛЛ</button>
+            <button class="btn-main btn-purple" onclick="toggleNumbersPanel()">ЧИСЛА</button>
+            <div id="numbers-panel" class="numbers-panel">
+                <div class="numbers-grid">
+                    <label>
+                        ЧИСЛА ОТ
+                        <input id="numbers-from-input" type="number" min="0" value="1">
+                    </label>
+                    <label>
+                        ЧИСЛА ДО
+                        <input id="numbers-to-input" type="number" min="0" value="100">
+                    </label>
+                </div>
+                <label>
+                    НАПИСАТЬ ЧИСЛО САМОМУ
+                    <input id="numbers-manual-input" type="number" min="0" placeholder="Например, 1">
+                </label>
+                <div class="numbers-actions">
+                    <button class="btn-main" style="margin-bottom:0;" onclick="startNumbersGame()">СТАРТ ЧИСЛА</button>
+                    <button class="btn-main" style="margin-bottom:0;" onclick="stopNumbersGame()">СБРОС</button>
+                </div>
+                <div id="numbers-status" class="numbers-status">Режим чисел выключен.</div>
+                <div class="numbers-chat-box">
+                    <iframe id="numbers-chat-frame" title="Numbers mode Twitch chat" loading="lazy" allow="clipboard-write"></iframe>
+                </div>
+            </div>
             <button class="btn-main" onclick="openStats()">АНАЛИТИКА ПРОЕКТОВ</button>
             <button class="btn-main" onclick="openHistory()">ИСТОРИЯ ВЫПАДЕНИЙ</button>
             <div class="filter-card">
@@ -1378,6 +1459,9 @@
         let currentCodeword = "+";
         let selectedImportFormat = 'csv';
         let autoSpinEnabled = false;
+        let numbersPanelOpen = false;
+        let numbersGameTarget = localStorage.getItem('bot_numbers_target') || '';
+        let numbersGameEnabled = localStorage.getItem('bot_numbers_enabled') === 'true';
         let wheelParticipants = [];
         let isWheelSpinning = false; // флаг блокировки обновления wheelParticipants во время крута
         let pendingParticipants = JSON.parse(localStorage.getItem('bot_pending_participants') || '[]'); // участники, которые написали кодовое пока рулетка открыта
@@ -2211,6 +2295,8 @@
                     addParticipantToFirebase(user);
                 }
 
+                handleNumbersMessage(user, msg);
+
                 if (currentWinner && user.toLowerCase() === currentWinner.toLowerCase()) {
                     if (winTimerActive) {
                         winTimerActive = false;
@@ -2335,14 +2421,85 @@
         }
         function initTwitchEmbed() {
             const frame = document.getElementById('twitch-chat-frame');
-            if (!frame) return;
+            const numbersFrame = document.getElementById('numbers-chat-frame');
             const safeChannelName = sanitizeChannelName(currentChannelName);
             if (!safeChannelName || !/^[a-z0-9_]{3,25}$/.test(safeChannelName)) {
-                frame.removeAttribute('src');
+                if (frame) frame.removeAttribute('src');
+                if (numbersFrame) numbersFrame.removeAttribute('src');
                 return;
             }
             const parentDomain = window.location.hostname || 'localhost';
-            frame.src = `https://www.twitch.tv/embed/${safeChannelName}/chat?parent=${encodeURIComponent(parentDomain)}&darkpopout`;
+            const embedUrl = `https://www.twitch.tv/embed/${safeChannelName}/chat?parent=${encodeURIComponent(parentDomain)}&darkpopout`;
+            if (frame) frame.src = embedUrl;
+            if (numbersFrame) numbersFrame.src = embedUrl;
+        }
+        function normalizeNumbersValue(value) {
+            const trimmed = String(value ?? '').trim();
+            if (!trimmed || !/^-?\d+$/.test(trimmed)) return null;
+            return String(parseInt(trimmed, 10));
+        }
+        function updateNumbersStatus() {
+            const status = document.getElementById('numbers-status');
+            if (!status) return;
+            if (!numbersGameEnabled || !numbersGameTarget) {
+                status.innerHTML = 'Режим чисел выключен.';
+                return;
+            }
+            status.innerHTML = `Сейчас ловим число: <b>${numbersGameTarget}</b><br>Кто первым напишет его в чат, тому откроется экран победителя.`;
+        }
+        function toggleNumbersPanel() {
+            numbersPanelOpen = !numbersPanelOpen;
+            const panel = document.getElementById('numbers-panel');
+            if (!panel) return;
+            panel.classList.toggle('is-open', numbersPanelOpen);
+            updateNumbersStatus();
+        }
+        function startNumbersGame() {
+            const fromInput = document.getElementById('numbers-from-input');
+            const toInput = document.getElementById('numbers-to-input');
+            const manualInput = document.getElementById('numbers-manual-input');
+            const manualValue = normalizeNumbersValue(manualInput ? manualInput.value : '');
+            let target = manualValue;
+
+            if (target === null) {
+                let from = parseInt(fromInput ? fromInput.value : '0', 10);
+                let to = parseInt(toInput ? toInput.value : '0', 10);
+                if (!Number.isFinite(from) || !Number.isFinite(to)) {
+                    alert('Укажите корректный диапазон чисел.');
+                    return;
+                }
+                if (from > to) {
+                    const temp = from;
+                    from = to;
+                    to = temp;
+                    if (fromInput) fromInput.value = String(from);
+                    if (toInput) toInput.value = String(to);
+                }
+                target = String(Math.floor(Math.random() * (to - from + 1)) + from);
+            }
+
+            numbersGameTarget = target;
+            numbersGameEnabled = true;
+            localStorage.setItem('bot_numbers_target', numbersGameTarget);
+            localStorage.setItem('bot_numbers_enabled', 'true');
+            updateNumbersStatus();
+        }
+        function stopNumbersGame() {
+            numbersGameEnabled = false;
+            numbersGameTarget = '';
+            localStorage.setItem('bot_numbers_target', '');
+            localStorage.setItem('bot_numbers_enabled', 'false');
+            updateNumbersStatus();
+        }
+        function handleNumbersMessage(user, msg) {
+            if (!numbersGameEnabled || !numbersGameTarget) return;
+            const normalizedMessage = normalizeNumbersValue(msg);
+            if (normalizedMessage === null) return;
+            if (normalizedMessage !== String(numbersGameTarget)) return;
+            numbersGameEnabled = false;
+            localStorage.setItem('bot_numbers_enabled', 'false');
+            updateNumbersStatus();
+            showWinnerRef(user);
         }
         function updateTimerDisplay() { const h = Math.floor(timerSeconds/3600).toString().padStart(2,'0'), m = Math.floor((timerSeconds%3600)/60).toString().padStart(2,'0'), s = (timerSeconds%60).toString().padStart(2,'0'); document.getElementById('timer').innerText = `${h}:${m}:${s}`; }
         function toggleTimer() { timerRunning = !timerRunning; if(audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -3089,6 +3246,7 @@
             } 
         }
         document.getElementById('import-textarea').addEventListener('input', updateImportApplyState);
+        updateNumbersStatus();
         // autoskip checkbox listener
         setTimeout(() => {
             const autos = document.getElementById('autoskip-checkbox');
