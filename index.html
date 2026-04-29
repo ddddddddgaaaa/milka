@@ -254,17 +254,30 @@
             color: var(--soft-light);
         }
         .numbers-panel {
-            display: none;
-            margin-bottom: 12px;
-            padding: 14px;
-            border-radius: 16px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--accent-neon-blue);
-            gap: 10px;
-            flex-direction: column;
-        }
-        .numbers-panel.is-open {
             display: flex;
+            width: min(760px, 92vw);
+            max-height: 86vh;
+            padding: 24px;
+            border-radius: 22px;
+            background: rgba(7, 10, 20, 0.98);
+            border: 1px solid var(--accent-neon-blue);
+            gap: 12px;
+            flex-direction: column;
+            box-sizing: border-box;
+            box-shadow: 0 0 45px rgba(0,0,0,0.6);
+        }
+        .numbers-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .numbers-title {
+            margin: 0;
+            color: var(--accent-neon-blue);
+            font-size: 18px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
         .numbers-grid {
             display: grid;
@@ -296,7 +309,7 @@
             color: #fbcfe8;
         }
         .numbers-chat-box {
-            height: 240px;
+            height: 320px;
             overflow: hidden;
             border-radius: 14px;
             border: 1px solid rgba(255, 20, 147, 0.25);
@@ -1230,31 +1243,7 @@
             <button class="btn-main btn-codeword" onclick="changeCodeword()">КОД: <span id="codeword-display">+</span></button>
             <button class="btn-main btn-purple" onclick="openWheel()">РУЛЕТКА</button>
             <button class="btn-main btn-purple" onclick="instantRoll()">БЫСТРЫЙ РОЛЛ</button>
-            <button class="btn-main btn-purple" onclick="toggleNumbersPanel()">ЧИСЛА</button>
-            <div id="numbers-panel" class="numbers-panel">
-                <div class="numbers-grid">
-                    <label>
-                        ЧИСЛА ОТ
-                        <input id="numbers-from-input" type="number" min="0" value="1">
-                    </label>
-                    <label>
-                        ЧИСЛА ДО
-                        <input id="numbers-to-input" type="number" min="0" value="100">
-                    </label>
-                </div>
-                <label>
-                    НАПИСАТЬ ЧИСЛО САМОМУ
-                    <input id="numbers-manual-input" type="number" min="0" placeholder="Например, 1">
-                </label>
-                <div class="numbers-actions">
-                    <button class="btn-main" style="margin-bottom:0;" onclick="startNumbersGame()">СТАРТ ЧИСЛА</button>
-                    <button class="btn-main" style="margin-bottom:0;" onclick="stopNumbersGame()">СБРОС</button>
-                </div>
-                <div id="numbers-status" class="numbers-status">Режим чисел выключен.</div>
-                <div class="numbers-chat-box">
-                    <iframe id="numbers-chat-frame" title="Numbers mode Twitch chat" loading="lazy" allow="clipboard-write"></iframe>
-                </div>
-            </div>
+            <button class="btn-main btn-purple" onclick="openNumbersPanel()">ЧИСЛА</button>
             <button class="btn-main" onclick="openStats()">АНАЛИТИКА ПРОЕКТОВ</button>
             <button class="btn-main" onclick="openHistory()">ИСТОРИЯ ВЫПАДЕНИЙ</button>
             <div class="filter-card">
@@ -1377,6 +1366,40 @@
             <div class="auth-note"></div>
         </div>
     </div>
+    <div id="numbers-modal" class="modal">
+        <div id="numbers-panel" class="numbers-panel">
+            <div class="numbers-header">
+                <h3 class="numbers-title">Режим чисел</h3>
+                <div class="close-x" onclick="closeNumbersPanel()" style="position:static; font-size:28px;">&times;</div>
+            </div>
+            <div class="numbers-grid">
+                <label>
+                    ЧИСЛА ОТ
+                    <input id="numbers-from-input" type="number" min="0" value="1">
+                </label>
+                <label>
+                    ЧИСЛА ДО
+                    <input id="numbers-to-input" type="number" min="0" value="100">
+                </label>
+            </div>
+            <label>
+                НАПИСАТЬ ЧИСЛО САМОМУ
+                <input id="numbers-manual-input" type="number" min="0" placeholder="Например, 1">
+            </label>
+            <div class="numbers-actions">
+                <button class="btn-main" style="margin-bottom:0;" onclick="startNumbersGame()">СТАРТ ЧИСЛА</button>
+                <button class="btn-main" style="margin-bottom:0;" onclick="stopNumbersGame()">СБРОС</button>
+            </div>
+            <div class="numbers-actions">
+                <button id="numbers-visibility-button" class="btn-main btn-purple" style="margin-bottom:0;" onclick="toggleNumbersTargetVisibility()">СКРЫТЬ ЧИСЛО</button>
+                <button class="btn-main" style="margin-bottom:0;" onclick="closeNumbersPanel()">ЗАКРЫТЬ</button>
+            </div>
+            <div id="numbers-status" class="numbers-status">Режим чисел выключен.</div>
+            <div class="numbers-chat-box">
+                <iframe id="numbers-chat-frame" title="Numbers mode Twitch chat" loading="lazy" allow="clipboard-write"></iframe>
+            </div>
+        </div>
+    </div>
 
     <div id="winner-screen" class="modal"><div class="modal-content" style="flex-direction: column; width: 90%; height: 90%; background: #05050a; padding: 40px;"><div class="close-x" onclick="closeModals()">&times;</div>
         <div id="win-header-block" style="display: flex; justify-content: space-between; align-items: center; transition: 0.5s; gap: 20px;">
@@ -1462,6 +1485,7 @@
         let numbersPanelOpen = false;
         let numbersGameTarget = localStorage.getItem('bot_numbers_target') || '';
         let numbersGameEnabled = localStorage.getItem('bot_numbers_enabled') === 'true';
+        let numbersRevealTarget = localStorage.getItem('bot_numbers_reveal_target') !== 'false';
         let wheelParticipants = [];
         let isWheelSpinning = false; // флаг блокировки обновления wheelParticipants во время крута
         let pendingParticipants = JSON.parse(localStorage.getItem('bot_pending_participants') || '[]'); // участники, которые написали кодовое пока рулетка открыта
@@ -2440,18 +2464,32 @@
         }
         function updateNumbersStatus() {
             const status = document.getElementById('numbers-status');
+            const visibilityButton = document.getElementById('numbers-visibility-button');
             if (!status) return;
+            if (visibilityButton) {
+                visibilityButton.innerText = numbersRevealTarget ? 'СКРЫТЬ ЧИСЛО' : 'ПОКАЗАТЬ ЧИСЛО';
+            }
             if (!numbersGameEnabled || !numbersGameTarget) {
                 status.innerHTML = 'Режим чисел выключен.';
                 return;
             }
-            status.innerHTML = `Сейчас ловим число: <b>${numbersGameTarget}</b><br>Кто первым напишет его в чат, тому откроется экран победителя.`;
+            const shownValue = numbersRevealTarget ? `<b>${numbersGameTarget}</b>` : '<b>СКРЫТО</b>';
+            status.innerHTML = `Сейчас ловим число: ${shownValue}<br>Кто первым напишет его в чат, тому откроется экран победителя.`;
         }
-        function toggleNumbersPanel() {
-            numbersPanelOpen = !numbersPanelOpen;
-            const panel = document.getElementById('numbers-panel');
-            if (!panel) return;
-            panel.classList.toggle('is-open', numbersPanelOpen);
+        function openNumbersPanel() {
+            numbersPanelOpen = true;
+            const modal = document.getElementById('numbers-modal');
+            if (modal) modal.style.display = 'flex';
+            updateNumbersStatus();
+        }
+        function closeNumbersPanel() {
+            numbersPanelOpen = false;
+            const modal = document.getElementById('numbers-modal');
+            if (modal) modal.style.display = 'none';
+        }
+        function toggleNumbersTargetVisibility() {
+            numbersRevealTarget = !numbersRevealTarget;
+            localStorage.setItem('bot_numbers_reveal_target', numbersRevealTarget ? 'true' : 'false');
             updateNumbersStatus();
         }
         function startNumbersGame() {
