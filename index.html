@@ -3010,7 +3010,15 @@
             drawWheel(0);
         }
 
-        function executeSpin() { if (wheelParticipants.length === 0) return; document.getElementById('roll-button').disabled = true; startSpin(selectedSpinMode); }
+        function executeSpin() { 
+            if (!wheelParticipants || wheelParticipants.length === 0) { 
+                alert('Нет участников в рулетке!'); 
+                document.getElementById('roll-button').disabled = false;
+                return; 
+            } 
+            document.getElementById('roll-button').disabled = true; 
+            startSpin(selectedSpinMode); 
+        }
 
         function getParticipantUnderArrow(angle) {
             const p = wheelParticipants || [];
@@ -3165,7 +3173,10 @@
         function startSpin(mode) {
             const duration = parseInt(document.getElementById('dur-input').value) * 1000;
             const n = wheelParticipants.length;
-            if (n === 0) return;
+            if (n === 0) {
+                document.getElementById('roll-button').disabled = false;
+                return;
+            }
             
             // Блокируем обновление wheelParticipants извне на время крута
             isWheelSpinning = true;
@@ -3273,6 +3284,9 @@
             autoSpinEnabled = false;
             const autos = document.getElementById('autoskip-checkbox');
             if (autos) autos.checked = false;
+            // Убеждаемся, что кнопка включена при закрытии
+            const rollBtn = document.getElementById('roll-button');
+            if (rollBtn) rollBtn.disabled = false;
         }
         async function resetAll() { 
             if(confirm('ПОЛНЫЙ СБРОС УЧАСТНИКОВ?')) { 
