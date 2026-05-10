@@ -254,17 +254,17 @@
             color: var(--soft-light);
         }
         .numbers-panel {
-            display: flex;
-            width: min(760px, 92vw);
-            max-height: 86vh;
+            width: min(1160px, 96vw);
+            height: min(760px, 90vh);
             padding: 24px;
             border-radius: 22px;
             background: rgba(7, 10, 20, 0.98);
             border: 1px solid var(--accent-neon-blue);
-            gap: 12px;
-            flex-direction: column;
             box-sizing: border-box;
             box-shadow: 0 0 45px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
         .numbers-header {
             display: flex;
@@ -276,6 +276,37 @@
             margin: 0;
             color: var(--accent-neon-blue);
             font-size: 18px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .numbers-layout {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+            gap: 16px;
+        }
+        .numbers-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+        .numbers-chat-pane {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 20, 147, 0.25);
+            background: rgba(18, 24, 40, 0.92);
+        }
+        .numbers-chat-title {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 20, 147, 0.2);
+            color: var(--accent-neon-blue);
+            font-size: 13px;
+            font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
@@ -309,10 +340,9 @@
             color: #fbcfe8;
         }
         .numbers-chat-box {
-            height: 320px;
+            flex: 1;
+            min-height: 0;
             overflow: hidden;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 20, 147, 0.25);
             background: var(--dark-purple);
         }
         #numbers-chat-frame {
@@ -321,6 +351,26 @@
             border: 0;
             display: block;
             background: var(--dark-purple);
+        }
+        .numbers-hint {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: #cbd5e1;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+        @media (max-width: 980px) {
+            .numbers-layout {
+                grid-template-columns: 1fr;
+            }
+            .numbers-panel {
+                height: min(900px, 92vh);
+            }
+            .numbers-chat-box {
+                min-height: 320px;
+            }
         }
         .btn-purple {
             border-color: var(--accent-neon-blue);
@@ -1243,7 +1293,7 @@
             <button class="btn-main btn-codeword" onclick="changeCodeword()">КОД: <span id="codeword-display">+</span></button>
             <button class="btn-main btn-purple" onclick="openWheel()">РУЛЕТКА</button>
             <button class="btn-main btn-purple" onclick="instantRoll()">БЫСТРЫЙ РОЛЛ</button>
-            <button class="btn-main btn-purple" onclick="openNumbersPanel()">ЧИСЛА</button>
+            <button class="btn-main btn-purple" onclick="openNumbersPanel()">ЦИФРЫ</button>
             <button class="btn-main" onclick="openStats()">АНАЛИТИКА ПРОЕКТОВ</button>
             <button class="btn-main" onclick="openHistory()">ИСТОРИЯ ВЫПАДЕНИЙ</button>
             <div class="filter-card">
@@ -1369,34 +1419,44 @@
     <div id="numbers-modal" class="modal">
         <div id="numbers-panel" class="numbers-panel">
             <div class="numbers-header">
-                <h3 class="numbers-title">Режим чисел</h3>
+                <h3 class="numbers-title">Цифры</h3>
                 <div class="close-x" onclick="closeNumbersPanel()" style="position:static; font-size:28px;">&times;</div>
             </div>
-            <div class="numbers-grid">
-                <label>
-                    ЧИСЛА ОТ
-                    <input id="numbers-from-input" type="number" min="0" value="1">
-                </label>
-                <label>
-                    ЧИСЛА ДО
-                    <input id="numbers-to-input" type="number" min="0" value="100">
-                </label>
-            </div>
-            <label>
-                НАПИСАТЬ ЧИСЛО САМОМУ
-                <input id="numbers-manual-input" type="number" min="0" placeholder="Например, 1">
-            </label>
-            <div class="numbers-actions">
-                <button class="btn-main" style="margin-bottom:0;" onclick="startNumbersGame()">СТАРТ ЧИСЛА</button>
-                <button class="btn-main" style="margin-bottom:0;" onclick="stopNumbersGame()">СБРОС</button>
-            </div>
-            <div class="numbers-actions">
-                <button id="numbers-visibility-button" class="btn-main btn-purple" style="margin-bottom:0;" onclick="toggleNumbersTargetVisibility()">СКРЫТЬ ЧИСЛО</button>
-                <button class="btn-main" style="margin-bottom:0;" onclick="closeNumbersPanel()">ЗАКРЫТЬ</button>
-            </div>
-            <div id="numbers-status" class="numbers-status">Режим чисел выключен.</div>
-            <div class="numbers-chat-box">
-                <iframe id="numbers-chat-frame" title="Numbers mode Twitch chat" loading="lazy" allow="clipboard-write"></iframe>
+            <div class="numbers-layout">
+                <div class="numbers-sidebar">
+                    <div class="numbers-grid">
+                        <label>
+                            ЦИФРЫ ОТ
+                            <input id="numbers-from-input" type="number" min="0" value="1">
+                        </label>
+                        <label>
+                            ЦИФРЫ ДО
+                            <input id="numbers-to-input" type="number" min="0" value="100">
+                        </label>
+                    </div>
+                    <label>
+                        ВПИСАТЬ ЦИФРУ ВРУЧНУЮ
+                        <input id="numbers-manual-input" type="number" min="0" placeholder="Например, 17">
+                    </label>
+                    <div class="numbers-actions">
+                        <button class="btn-main" style="margin-bottom:0;" onclick="startNumbersGame()">ВЫБРАТЬ ЦИФРУ</button>
+                        <button class="btn-main" style="margin-bottom:0;" onclick="stopNumbersGame()">СБРОС</button>
+                    </div>
+                    <div class="numbers-actions">
+                        <button id="numbers-visibility-button" class="btn-main btn-purple" style="margin-bottom:0;" onclick="toggleNumbersTargetVisibility()">СКРЫТЬ ЦИФРУ</button>
+                        <button class="btn-main" style="margin-bottom:0;" onclick="closeNumbersPanel()">ЗАКРЫТЬ</button>
+                    </div>
+                    <div id="numbers-status" class="numbers-status">Режим цифр выключен.</div>
+                    <div class="numbers-hint">
+                        Можно либо вписать свою цифру вручную, либо оставить поле пустым и тогда выпадет случайная цифра из диапазона.
+                    </div>
+                </div>
+                <div class="numbers-chat-pane">
+                    <div class="numbers-chat-title">Чат справа</div>
+                    <div class="numbers-chat-box">
+                        <iframe id="numbers-chat-frame" title="Numbers mode Twitch chat" loading="lazy" allow="clipboard-write"></iframe>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2468,14 +2528,14 @@
             const visibilityButton = document.getElementById('numbers-visibility-button');
             if (!status) return;
             if (visibilityButton) {
-                visibilityButton.innerText = numbersRevealTarget ? 'СКРЫТЬ ЧИСЛО' : 'ПОКАЗАТЬ ЧИСЛО';
+                visibilityButton.innerText = numbersRevealTarget ? 'СКРЫТЬ ЦИФРУ' : 'ПОКАЗАТЬ ЦИФРУ';
             }
             if (!numbersGameEnabled || !numbersGameTarget) {
-                status.innerHTML = 'Режим чисел выключен.';
+                status.innerHTML = 'Режим цифр выключен.';
                 return;
             }
             const shownValue = numbersRevealTarget ? `<b>${numbersGameTarget}</b>` : '<b>СКРЫТО</b>';
-            status.innerHTML = `Сейчас ловим число: ${shownValue}<br>Кто первым напишет его в чат, тому откроется экран победителя.`;
+            status.innerHTML = `Сейчас выбрана цифра: ${shownValue}<br>Кто первым напишет её в чат, тому откроется экран победителя.`;
         }
         function openNumbersPanel() {
             numbersPanelOpen = true;
