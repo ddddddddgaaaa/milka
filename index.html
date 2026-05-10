@@ -1312,7 +1312,7 @@
         </div>
         <div class="panel panel-with-bg">
             <h3 style="margin:0 0 15px 0; color: var(--accent-neon-blue); text-shadow: none;">ПОСЛЕДНИЕ 10 ВЫИГРЫВАВШИХ</h3>
-            <div id=\"leaderboard\" style=\"overflow-y:auto; flex-grow: 1; max-height: 350px;\"></div>
+            <div id="leaderboard" style="overflow-y:auto; flex-grow: 1; max-height: 350px;"></div>
             <div onclick="openAdminLogin()" style="position:absolute; bottom:2px; left:50%; transform:translateX(-50%); width:160px; height:22px; cursor:default; z-index:10000; background:transparent; border:none; outline:none;"></div>
         </div>
     </div>
@@ -2398,6 +2398,7 @@
             recalculateLeadersFromHistory();
             leaders.sort((a,b) => b.amount - a.amount);
             const container = document.getElementById('leaderboard');
+            if (!container) return;
             container.innerHTML = '';
             leaders.forEach((item, i) => {
                 container.innerHTML += `<div class="leader-item" style="cursor:pointer;" onclick="openLeaderEdit(${i})"><div class="leader-row" style="display:flex; justify-content:space-between; align-items:center;"><span><b>${i+1}.</b> ${item.name}</span><div><b style="color:var(--accent-neon-blue);">${item.amount.toLocaleString()} ₽</b></div></div></div>`;
