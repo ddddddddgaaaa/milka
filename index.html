@@ -2927,6 +2927,7 @@
             clearInterval(window.winInt);
             window.winInt = setInterval(() => { if (winTimerActive) { s++; let sec = s%60, min = Math.floor(s/60), hr = Math.floor(min/60); document.getElementById('win-timer-label').innerText = `${hr.toString().padStart(2,'0')}:${(min%60).toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`; } }, 1000);
         }
+
         function updateParticipantPreview() { const container = document.getElementById('participant-list'); if (!container) return; const arr = Array.from(participants).reverse(); const preview = arr.slice(0, 8); container.innerHTML = preview.map(u => { let badge = userRolesCache[u.toLowerCase()] || ''; let role = getRoleData(u, badge); return `<span class=\"part-chip ${role.cls}\">${u}</span>`; }).join(''); }
         function resetWheelParticipants() {
             if (confirm('Сбросить всех участников в рулетке?')) {
@@ -3011,11 +3012,10 @@
         }
 
         function executeSpin() { 
-            if (!wheelParticipants || wheelParticipants.length === 0) { 
-                alert('Нет участников в рулетке!'); 
-                document.getElementById('roll-button').disabled = false;
-                return; 
-            } 
+            if (wheelParticipants.length === 0) {
+                alert('Нет участников в рулетке!');
+                return;
+            }
             document.getElementById('roll-button').disabled = true; 
             startSpin(selectedSpinMode); 
         }
@@ -3174,7 +3174,8 @@
             const duration = parseInt(document.getElementById('dur-input').value) * 1000;
             const n = wheelParticipants.length;
             if (n === 0) {
-                document.getElementById('roll-button').disabled = false;
+                const btn = document.getElementById('roll-button');
+                if (btn) btn.disabled = false;
                 return;
             }
             
@@ -3284,9 +3285,6 @@
             autoSpinEnabled = false;
             const autos = document.getElementById('autoskip-checkbox');
             if (autos) autos.checked = false;
-            // Убеждаемся, что кнопка включена при закрытии
-            const rollBtn = document.getElementById('roll-button');
-            if (rollBtn) rollBtn.disabled = false;
         }
         async function resetAll() { 
             if(confirm('ПОЛНЫЙ СБРОС УЧАСТНИКОВ?')) { 
@@ -3400,6 +3398,24 @@
             const newWinner = pickRiggedWinner(pool);
             if (newWinner) showWinnerRef(newWinner);
             else closeModals();
+        };
+
+        function getQuickRollParticipants() {
+            return Array.from(participants).filter(name => typeof name === 'string' && name.trim());
+        }
+
+        instantRoll = function() {
+            const pool = getQuickRollParticipants();
+            if (pool.length < 1) {
+                alert('Нет участников в списке!');
+                return;
+            }
+            const winnerName = pool[Math.floor(Math.random() * pool.length)];
+            if (!winnerName) {
+                alert('Не удалось выбрать победителя.');
+                return;
+            }
+            showWinnerRef(winnerName);
         };
 
         document.getElementById('auth-password-input').addEventListener('keydown', (event) => {
